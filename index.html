@@ -103,10 +103,6 @@
       .header-bar { position: relative; }
     }
   </style>
-
-  <!-- Firebase Legacy SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -167,23 +163,10 @@
   </div>
 
   <script>
-    // --- 1. FIREBASE CONFIGURATION ---
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // --- 2. GOOGLE APPS SCRIPT WEB APP URL ---
+    // --- 1. GOOGLE APPS SCRIPT WEB APP URL ---
     const GOOGLE_SHEET_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwAN3IOSDulHZVQmYvnEqolvOpnJSrg0GE-SkM8XKtVwwMkpo-YDsEseP15WG5chhb/exec";
 
-    // Allowed Mobile Numbers List (Fixed comma missing issue)
+    // Allowed Mobile Numbers List
     const ALLOWED_NUMBERS = [
       "9876543210", "9123456789", "8888888888", "8759966414", "8145053046", "7421351001",
       "7421351004", "7421351009", "7421351016", "7421351025", "7421351036", "7421351049",
@@ -198,7 +181,7 @@
       "7908536664"
     ];
 
-    // --- 3. 100 QUESTION BANK FROM MOCK 6 ---
+    // --- 2. QUESTION BANK ---
     const questions = [
       { id: 1, q: "সিন্ধু সভ্যতার কোন স্থানে একটি বৃহৎ জলাধার বা reservoir-এর নিদর্শন পাওয়া গেছে, যা জল সংরক্ষণ ব্যবস্থার উন্নত ধারণার পরিচয় দেয়?", options: ["A) হরপ্পা", "B) ধোলাভিরা", "C) লোথাল", "D) কালীবঙ্গান"], answer: 1 },
       { id: 2, q: "‘মহাবংশ’ ও ‘দীপবংশ’ কোন দেশের প্রাচীন ইতিহাসের গুরুত্বপূর্ণ উৎস?", options: ["A) ভারত", "B) নেপাল", "C) শ্রীলঙ্কা", "D) মায়ানমার"], answer: 2 },
@@ -303,11 +286,11 @@
     ];
 
     let timerInterval;
-    let timeRemaining = 90 * 60; // 90 Minutes in seconds
+    let timeRemaining = 90 * 60; // 90 Minutes
     let userData = { name: "", phone: "" };
 
-    // --- 4. VERIFICATION & ATTEMPT TRACKING ---
-    async function verifyAndStart() {
+    // --- 3. VERIFICATION & START TEST ---
+    function verifyAndStart() {
       const name = document.getElementById("student-name").value.trim();
       const phone = document.getElementById("student-phone").value.trim();
       const err = document.getElementById("login-err");
@@ -322,19 +305,6 @@
         return;
       }
 
-      // Read current attempts from Firebase Database
-      const userRef = db.ref('users/' + phone);
-      const snapshot = await userRef.once('value');
-      const attempts = snapshot.val() ? snapshot.val().attempts : 0;
-
-      if (attempts >= 20) {
-        err.innerText = "Attempt Limit Reached: You have already used all 20 allowed test attempts.";
-        return;
-      }
-
-      // Save updated attempt count to Firebase
-      await userRef.set({ attempts: attempts + 1, studentName: name });
-
       userData = { name, phone };
       document.getElementById("disp-name").innerText = name;
 
@@ -345,7 +315,7 @@
       startTimer();
     }
 
-    // --- 5. RENDER EXAM QUESTION CARDS ---
+    // --- 4. RENDER EXAM QUESTIONS ---
     function renderQuestions() {
       const form = document.getElementById("quiz-form");
       form.innerHTML = questions.map((q, i) => `
@@ -363,7 +333,7 @@
       `).join('');
     }
 
-    // --- 6. TIMER ENGINE ---
+    // --- 5. TIMER ENGINE ---
     function startTimer() {
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -380,7 +350,7 @@
       }, 1000);
     }
 
-    // --- 7. EVALUATION & SUBMISSION ---
+    // --- 6. EVALUATION & SUBMISSION ---
     function submitTest() {
       clearInterval(timerInterval);
 
@@ -434,7 +404,7 @@
       document.getElementById("result-section").classList.remove("hidden");
     }
 
-    // --- 8. SAVE TO GOOGLE SHEETS VIA APPS SCRIPT ---
+    // --- 7. SAVE TO GOOGLE SHEETS VIA APPS SCRIPT ---
     function saveToGoogleSheet(data) {
       fetch(GOOGLE_SHEET_SCRIPT_URL, {
         method: "POST",
@@ -444,7 +414,7 @@
       }).catch(err => console.error("Error submitting result to Google Sheet:", err));
     }
 
-    // --- 9. RENDER PREVIEW & MASTER ANSWER KEY TABLE ---
+    // --- 8. RENDER PREVIEW & MASTER ANSWER KEY TABLE ---
     function renderReview(userAnswers) {
       const container = document.getElementById("review-questions");
       container.innerHTML = questions.map((q, i) => {
